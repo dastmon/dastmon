@@ -67,8 +67,9 @@ if (!API_URL || !ADMIN_TOKEN) { console.error('Secret API_URL / ADMIN_TOKEN belu
 const res = await fetch(API_URL, {
   method: 'POST',
   headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-  body: JSON.stringify({ action: 'import', token: ADMIN_TOKEN, tags })
+  body: JSON.stringify({ action: 'import', token: ADMIN_TOKEN, tags }),
+  signal: AbortSignal.timeout(330000) // backend ikut menganalisis tag dengan AI (bisa 1-3 menit)
 });
 const json = await res.json().catch(() => ({ ok: false, error: 'Respon bukan JSON (HTTP ' + res.status + ')' }));
 if (!json.ok) { console.error('Backend menolak:', json.error); process.exit(1); }
-console.log(`✅ ${json.count} tag dikirim ke backend.`);
+console.log(`✅ ${json.count} tag ditulis ke sheet teepublic | dianalisis AI: ${json.analyzed} | belum terproses: ${json.pending}`);
