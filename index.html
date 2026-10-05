@@ -1,40 +1,71 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full bg-slate-900 text-slate-100">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DASTMON - Trend Monitoring</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>body{font-family:'Plus Jakarta Sans',sans-serif}</style>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
+  <style>
+    :root{--bg:#f9fafb;--card:#fff;--bd:#e4e7ec;--tx:#101828;--mu:#667085;--br:#465fff;--hv:#f2f4f7;--act:#ecf3ff}
+    .dark{--bg:#0c111d;--card:#101828;--bd:#1d2939;--tx:#f9fafb;--mu:#98a2b3;--hv:#1d2939;--act:#212b5e}
+    *{box-sizing:border-box}
+    body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);margin:0}
+    aside{position:fixed;inset:0 auto 0 0;width:290px;background:var(--card);border-right:1px solid var(--bd);padding:20px 16px;overflow-y:auto;z-index:40;transform:translateX(-100%);transition:transform .2s}
+    aside.open{transform:none}
+    #ov{position:fixed;inset:0;background:#0007;z-index:30;display:none}
+    aside.open~#ov{display:block}
+    @media(min-width:1024px){aside{transform:none}.wrap{margin-left:290px}#ov{display:none!important}#burger{display:none}}
+    .top{position:sticky;top:0;z-index:20;height:72px;background:var(--card);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;padding:0 24px}
+    .logo{font-size:22px;font-weight:700;color:var(--br);padding:4px 12px 20px}
+    .lbl{font-size:12px;color:var(--mu);padding:0 12px 8px}
+    summary{list-style:none;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;font-size:14px;font-weight:500;color:var(--mu);cursor:pointer}
+    summary::-webkit-details-marker{display:none}
+    summary:hover{background:var(--hv)}
+    .chev{margin-left:auto;transition:transform .2s}
+    details[open] .chev{transform:rotate(180deg)}
+    .grp a{display:block;padding:9px 12px 9px 44px;border-radius:8px;font-size:14px;color:var(--mu);text-decoration:none}
+    .grp a:hover{background:var(--hv)}
+    .grp a.on{background:var(--act);color:var(--br);font-weight:500}
+    .card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:20px}
+    .card h3{font-size:16px;font-weight:600;margin:0 0 12px}
+    .mu{color:var(--mu);font-size:13px}
+    .big{font-size:26px;font-weight:700;margin-top:4px}
+    .btn{background:var(--br);color:#fff;border:0;border-radius:8px;padding:9px 16px;font:500 14px 'Outfit',sans-serif;cursor:pointer}
+    .btn.o{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+    .btn:disabled{opacity:.4;cursor:default}
+    input,select{background:transparent;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font:14px 'Outfit',sans-serif;color:var(--tx);outline:none}
+    input:focus,select:focus,.btn:focus-visible{border-color:var(--br);outline:2px solid var(--br);outline-offset:1px}
+    select option{background:var(--card)}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th{text-align:left;padding:12px 20px;font-size:12px;color:var(--mu);font-weight:500;background:var(--bg);white-space:nowrap}
+    td{padding:12px 20px;border-top:1px solid var(--bd)}
+    tr:hover td{background:var(--hv)}
+    .c{text-align:center}.b{font-weight:600}.brand{color:var(--br);font-weight:600}.m{color:var(--mu)}
+    .mono{font:12px ui-monospace,monospace;color:var(--mu);white-space:nowrap}
+    .pill{padding:2px 10px;border-radius:99px;font-size:12px;font-weight:500;white-space:nowrap}
+  </style>
 </head>
-<body class="h-full flex flex-col">
-  <header class="bg-slate-800/50 border-b border-slate-700/60 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-bold text-indigo-300">DASTMON</h1>
-      <p class="text-xs text-slate-400">Dashboard Trend Monitoring • <span id="updated">-</span></p>
-    </div>
-    <div class="flex items-center gap-2">
-      <select id="job" class="bg-slate-800 border border-slate-600/50 rounded-xl px-3 py-2 text-sm">
-        <option value="">⚡ Jalankan scraper…</option>
-        <option value="trends">GetDayTrends</option>
-        <option value="teepublic">TeePublic</option>
-      </select>
-      <button id="sync" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-sm font-medium">Sync</button>
-    </div>
-  </header>
+<body>
+  <aside id="side">
+    <div class="logo">DASTMON</div>
+    <p class="lbl">Menu</p>
+    <nav id="nav"></nav>
+  </aside>
+  <div id="ov"></div>
 
-  <main class="flex-1 p-6 space-y-5 overflow-y-auto">
-    <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/60 pb-2">
-      <div id="tabs" class="flex gap-5 text-sm"></div>
-      <input id="q" placeholder="Cari…" class="w-full md:w-72 bg-slate-800/70 border border-slate-700 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-indigo-500">
-    </div>
-    <p id="msg" class="text-sm text-slate-400"></p>
-    <div class="bg-slate-800/30 border border-slate-700/50 rounded-2xl overflow-x-auto">
-      <table class="w-full text-left text-sm"><thead id="thead"></thead><tbody id="tbody" class="divide-y divide-slate-700/50"></tbody></table>
-    </div>
-  </main>
+  <div class="wrap">
+    <header class="top">
+      <button id="burger" class="btn o" aria-label="Buka menu">☰</button>
+      <p class="mu" style="margin:0">Update: <span id="updated">-</span></p>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button id="theme" class="btn o">Tema</button>
+        <button id="sync" class="btn">Sync</button>
+      </div>
+    </header>
+    <main id="view" style="padding:24px"></main>
+  </div>
   <script src="app.js"></script>
 </body>
 </html>
