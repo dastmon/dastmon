@@ -4,7 +4,7 @@ const IC = {"Charts": "<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M12
 // === KONFIGURASI: URL Web App (berakhiran /exec) ===
 const API_URL = 'https://script.google.com/macros/s/AKfycbyDoByjuZsbhlTykBp6RjQQQvEHqwcusB9rc5EKB6BaSm1l27Bz-vkkHS0Zm43u8n9gMw/exec';
 const REFRESH_MS = 5 * 60 * 1000;
-const PER = 15; // baris per halaman
+let perPage = 10; // baris per halaman (10/20/30/40/50)
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -18,6 +18,8 @@ const BTN_O = 'text-theme-xs shadow-theme-xs inline-flex items-center justify-ce
 const BTN = 'text-theme-xs shadow-theme-xs inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 py-1.5 font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-300';
 const SELECT = 'shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-3 py-1.5 pr-9 text-theme-xs text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90';
 const OPT = 'text-gray-700 dark:bg-gray-900 dark:text-gray-400';
+const BTN_I = 'shadow-theme-xs inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/3 dark:hover:text-gray-200';
+const PBTN = (dir, ic, lbl, dis) => `<button class="${BTN_I}" data-pg="${dir}" aria-label="${lbl}" ${dis ? 'disabled' : ''}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ic}</svg></button>`;
 const CHEV = '<path d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
 
 // ---------- Menu ----------
@@ -66,15 +68,15 @@ const DATA = {
   }
 };
 
-let data = null, route = '', pg = 0, selected = '', sidebarToggle = false, menuToggle = false;
+let data = null, loading = true, route = '', pg = 0, selected = '', sidebarToggle = false, menuToggle = false;
 let dark = JSON.parse(localStorage.getItem('darkMode') || 'false');
 const charts = {};
-const say = t => { const m = $('msg'); if (m) m.textContent = t; };
 const pageName = r => { const [g, s] = r.split('/'); return MENU.find(x => x[0] === g)?.[3].find(x => x[0] === s)?.[1] || ''; };
 
 // ---------- Kerangka halaman (sama dengan index.html template) ----------
 $('app').innerHTML = `
 <div id="pre" class="fixed top-0 left-0 z-999999 flex h-screen w-screen items-center justify-center bg-white dark:bg-black"><div class="border-brand-500 h-16 w-16 animate-spin rounded-full border-4 border-solid border-t-transparent"></div></div>
+<div id="modal" class="fixed inset-0 z-999999 hidden items-center justify-center bg-gray-900/50 p-5 backdrop-blur-sm"></div>
 <div class="flex h-screen overflow-hidden">
   <aside id="side" class="sidebar fixed top-0 left-0 z-9999 flex h-screen w-60 -translate-x-full flex-col overflow-y-auto border-r border-gray-200 bg-white px-3 transition-all duration-300 xl:static xl:translate-x-0 dark:border-gray-800 dark:bg-black">
     <div class="sidebar-header flex items-center justify-between gap-2 pt-4 pb-3">
@@ -107,10 +109,12 @@ $('app').innerHTML = `
           <p class="text-theme-sm text-gray-500 dark:text-gray-400">Update: <span id="updated">-</span></p>
           <div class="2xsm:gap-3 flex items-center gap-2">
             <button id="theme" aria-label="Ganti tema" class="relative flex h-9 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">${sv(IC.h5, 'hidden dark:block', 20, 20, '0 0 20 20')}${sv(IC.h6, 'dark:hidden', 20, 20, '0 0 20 20')}</button>
-            <button id="sync" class="${BTN} h-9">Sync</button>
+            <button id="run" hidden class="${BTN_O} h-9 whitespace-nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Jalankan scraper</button>
+            <button id="sync" class="${BTN} h-9"><svg id="sicon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg>Sync</button>
           </div>
         </div>
       </div>
+      <div id="bar" hidden class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden"><div class="absolute h-full w-2/5 bg-brand-500" style="animation:dm-bar 1.1s ease-in-out infinite"></div></div>
     </header>
     <main><div id="view" class="mx-auto max-w-(--breakpoint-2xl) p-3 pb-16 md:p-4 md:pb-4"></div></main>
   </div>
@@ -178,6 +182,7 @@ function go() {
   pg = 0;
   const d = DATA[route];
   if (d) shell(d); else soon();
+  $('run').hidden = !d;
   update();
 }
 
@@ -197,7 +202,6 @@ function soon() {
 
 function shell(d) {
   $('view').innerHTML = crumb() + `
-  <p id="msg" class="text-theme-xs pb-2 text-gray-500 empty:hidden dark:text-gray-400"></p>
   <div class="grid grid-cols-12 gap-3">
     <div id="stats" class="col-span-12 grid grid-cols-2 gap-3 xl:grid-cols-4"></div>
     <div class="col-span-12 xl:col-span-8 ${CARD} p-4">
@@ -211,14 +215,12 @@ function shell(d) {
           <div class="relative z-20 bg-transparent"><select id="rf" class="${SELECT} sm:w-40">
             <option value="" class="${OPT}">Semua risiko</option><option class="${OPT}">High</option><option class="${OPT}">Medium</option><option class="${OPT}">Low</option><option class="${OPT}">Unknown</option></select>
             <span class="pointer-events-none absolute top-1/2 right-3 z-30 -translate-y-1/2 stroke-current text-gray-500 dark:text-gray-400"><svg width="16" height="16" viewBox="0 0 20 20" fill="none">${CHEV}</svg></span></div>
-          <button id="run" class="${BTN} h-9 whitespace-nowrap">Jalankan scraper</button>
         </div>
       </div>
       <div class="custom-scrollbar max-w-full overflow-x-auto"><table class="min-w-full"><thead id="thead" class="border-y border-gray-100 dark:border-gray-800"></thead><tbody id="tbody" class="divide-y divide-gray-100 dark:divide-gray-800"></tbody></table></div>
-      <div id="pager" class="flex items-center justify-between gap-3 border-t border-gray-100 py-2 dark:border-gray-800"></div>
+      <div id="pager" class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 py-2 dark:border-gray-800"></div>
     </div>
   </div>`;
-  $('run').onclick = () => runJob(d.job);
   $('rf').onchange = () => { pg = 0; update(); };
 }
 
@@ -227,6 +229,7 @@ const count = (rows, f) => rows.reduce((m, r) => { const k = f(r); m[k] = (m[k] 
 
 function draw(id, opt) {
   charts[id]?.destroy();
+  $(id).innerHTML = '';
   charts[id] = new ApexCharts($(id), {
     fill: { opacity: 1 },
     ...opt,
@@ -250,6 +253,7 @@ const sIcon = p => `<svg class="stroke-gray-800 dark:stroke-white/90" width="20"
 function update() {
   const d = DATA[route];
   if (!d || !$('stats')) return;
+  if (loading && !data) return skeleton(d);
   const all = data?.[d.key] || [];
   const risks = count(all, r => nk(d.risk(r)));
   const cats = Object.entries(count(all.filter(r => d.cat(r) && d.cat(r) !== '-'), d.cat)).sort((a, b) => b[1] - a[1]);
@@ -292,9 +296,9 @@ function update() {
 
   const q = $('gq').value.toLowerCase(), f = $('rf').value;
   const rows = all.filter(r => (!f || nk(d.risk(r)) === f) && (!q || Object.values(r).join(' ').toLowerCase().includes(q)));
-  const pages = Math.max(1, Math.ceil(rows.length / PER));
+  const pages = Math.max(1, Math.ceil(rows.length / perPage));
   pg = Math.min(pg, pages - 1);
-  const from = pg * PER, part = rows.slice(from, from + PER);
+  const from = pg * perPage, part = rows.slice(from, from + perPage);
   const nw = c => (c[2] || '').includes('min-w') ? '' : 'whitespace-nowrap';
 
   $('count').textContent = `${rows.length} dari ${all.length} data`;
@@ -302,50 +306,121 @@ function update() {
   $('tbody').innerHTML = part.length
     ? part.map((r, i) => `<tr>${d.cols.map(c => `<td class="px-3 py-1.5 ${nw(c)} ${c[2] || ''} first:pl-0"><div class="flex items-center">${c[1](r, from + i + 1)}</div></td>`).join('')}</tr>`).join('')
     : `<tr><td colspan="${d.cols.length}" class="py-6 text-center text-theme-xs text-gray-500 dark:text-gray-400">Tidak ada data.</td></tr>`;
-  $('pager').innerHTML = `<span class="text-theme-xs text-gray-500 dark:text-gray-400">${rows.length ? `Menampilkan ${from + 1}–${from + part.length} dari ${rows.length}` : '0 data'}</span>
-    <div class="flex gap-2"><button class="${BTN_O}" data-pg="-1" ${pg === 0 ? 'disabled' : ''}>Sebelumnya</button>
-    <button class="${BTN_O}" data-pg="1" ${pg >= pages - 1 ? 'disabled' : ''}>Berikutnya</button></div>`;
+  $('pager').innerHTML = `<div class="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400"><span>Tampilkan</span>
+    <div class="relative"><select id="pp" aria-label="Jumlah data per halaman" class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 text-theme-xs h-8 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-1 pr-7 pl-3 text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">${[10, 20, 30, 40, 50].map(n => `<option value="${n}" class="${OPT}" ${n === perPage ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <span class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 stroke-current text-gray-500 dark:text-gray-400"><svg width="14" height="14" viewBox="0 0 20 20" fill="none">${CHEV}</svg></span></div><span>data</span></div>
+    <div class="flex items-center gap-2"><span class="text-theme-xs text-gray-500 dark:text-gray-400">${rows.length ? `${from + 1}–${from + part.length} dari ${rows.length}` : '0 data'}</span>
+    ${PBTN(-1, '<path d="M12.5 5l-5 5 5 5"/>', 'Sebelumnya', pg === 0)}${PBTN(1, '<path d="M7.5 5l5 5-5 5"/>', 'Berikutnya', pg >= pages - 1)}</div>`;
 }
 
 $('view').addEventListener('click', e => {
   const b = e.target.closest('[data-pg]');
   if (b) { pg += Number(b.dataset.pg); update(); }
 });
+$('view').addEventListener('change', e => { if (e.target.id === 'pp') { perPage = Number(e.target.value); pg = 0; update(); } });
 $('gq').oninput = () => { pg = 0; update(); };
 
+// ---------- Skeleton (animasi loading) ----------
+const sk = (c, st = '') => `<div class="animate-pulse rounded-md bg-gray-200 dark:bg-gray-800 ${c}" style="${st}"></div>`;
+function skeleton(d) {
+  $('stats').innerHTML = [1, 2, 3, 4].map(() => `<div class="flex items-center gap-3 ${CARD} p-3">${sk('h-10 w-10 shrink-0 !rounded-lg')}<div class="flex-1 space-y-2">${sk('h-3 w-16')}${sk('h-5 w-10')}</div></div>`).join('');
+  $('c1').innerHTML = `<div class="space-y-3 py-1">${[92, 74, 58, 44, 30].map(w => sk('h-4', `width:${w}%`)).join('')}</div>`;
+  $('c2').innerHTML = `<div class="flex justify-center py-2">${sk('h-44 w-44 !rounded-full')}</div>`;
+  $('count').textContent = 'Memuat data…';
+  $('thead').innerHTML = `<tr>${d.cols.map(c => `<th class="px-3 py-2 text-left first:pl-0"><p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">${c[0]}</p></th>`).join('')}</tr>`;
+  $('tbody').innerHTML = Array.from({ length: 8 }, () => `<tr>${d.cols.map(() => `<td class="px-3 py-2.5 first:pl-0">${sk('h-3 w-full max-w-40')}</td>`).join('')}</tr>`).join('');
+  $('pager').innerHTML = '';
+}
+
+// ---------- Modal (semua notifikasi) ----------
+const MI = {
+  success: ['bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500', '<path d="M5 13l4 4L19 7"/>'],
+  error: ['bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500', '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5h.01"/>'],
+  info: ['bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400', '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/>']
+};
+let mAct = [], mDismiss = true;
+function modal({ type = 'info', title = '', text = '', body = '', actions, dismiss = true }) {
+  mAct = actions || [['OK', 'primary']]; mDismiss = dismiss;
+  const ic = type === 'loading'
+    ? '<div class="border-brand-500 h-12 w-12 animate-spin rounded-full border-4 border-solid border-t-transparent"></div>'
+    : `<div class="flex h-12 w-12 items-center justify-center rounded-full ${MI[type][0]}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${MI[type][1]}</svg></div>`;
+  const btns = mAct.map(([l, k], i) => `<button data-m="${i}" class="${k === 'primary' ? BTN : BTN_O} min-w-24">${esc(l)}</button>`).join('');
+  const m = $('modal');
+  m.innerHTML = `<div role="dialog" aria-modal="true" class="w-full max-w-115 rounded-3xl bg-white p-6 text-center dark:bg-gray-900">
+    <div class="mb-4 flex justify-center">${ic}</div>
+    <h4 class="mb-2 text-xl font-semibold text-gray-800 dark:text-white/90">${esc(title)}</h4>
+    <p class="text-sm leading-6 text-gray-500 dark:text-gray-400">${esc(text)}</p>${body}
+    ${btns ? `<div class="mt-6 flex items-center justify-center gap-3">${btns}</div>` : ''}</div>`;
+  m.classList.remove('hidden'); m.classList.add('flex');
+  setTimeout(() => ($('mi') || m.querySelector('[data-m]:last-child'))?.focus(), 30);
+}
+function closeModal() { const m = $('modal'); m.classList.add('hidden'); m.classList.remove('flex'); m.innerHTML = ''; mAct = []; }
+$('modal').addEventListener('click', e => {
+  const b = e.target.closest('[data-m]');
+  if (b) { const a = mAct[Number(b.dataset.m)]; if (a?.[2]) a[2](); else closeModal(); return; }
+  if (e.target === $('modal') && mDismiss) closeModal();
+});
+document.addEventListener('keydown', e => {
+  if ($('modal').classList.contains('hidden')) return;
+  if (e.key === 'Escape' && mDismiss) closeModal();
+  if (e.key === 'Enter' && e.target.id === 'mi') mAct[mAct.length - 1]?.[2]?.();
+});
+
+const TOKEN_INPUT = '<input id="mi" type="password" autocomplete="off" placeholder="ADMIN_TOKEN" class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 mt-4 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">';
+function askRun(name, saved) {
+  return new Promise(res => modal({
+    type: 'info', title: 'Jalankan scraper?', dismiss: false,
+    text: `Scraper "${name}" akan dijalankan dan data diperbarui. Proses bisa memakan waktu beberapa menit.${saved ? '' : ' Masukkan ADMIN_TOKEN untuk melanjutkan.'}`,
+    body: saved ? '' : TOKEN_INPUT,
+    actions: [
+      ['Batal', 'outline', () => { closeModal(); res(null); }],
+      ['Jalankan', 'primary', () => { const v = saved || $('mi').value.trim(); if (!v) { $('mi').focus(); return; } closeModal(); res(v); }]]
+  }));
+}
+
 // ---------- API ----------
-async function load() {
-  say('Memuat data…');
+function setBusy(on) {
+  $('bar').hidden = !on;
+  $('sync').disabled = on;
+  $('sicon').classList.toggle('animate-spin', on);
+}
+
+async function load(silent) {
+  loading = true; setBusy(true);
+  if (!data) update();
   try {
     const res = await fetch(`${API_URL}?action=data`);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
     data = json;
     $('updated').textContent = json.updatedAt;
-    say('');
-    update();
-  } catch (e) { say('Gagal memuat: ' + e.message); }
+  } catch (e) {
+    // refresh otomatis (silent) tidak memunculkan modal; Sync manual & muat awal tetap memunculkan
+    if (!silent && $('modal').classList.contains('hidden')) modal({ type: 'error', title: 'Gagal memuat data', text: e.message });
+  }
+  loading = false; setBusy(false); update();
 }
 
 async function runJob(job) {
-  const token = sessionStorage.getItem('dastmon_token') || prompt('Masukkan ADMIN_TOKEN:');
+  const token = await askRun(pageName(route), sessionStorage.getItem('dastmon_token'));
   if (!token) return;
   $('run').disabled = true;
-  say('Scraper berjalan, bisa beberapa menit…');
+  modal({ type: 'loading', title: 'Scraper sedang berjalan', text: 'Mohon tunggu, proses bisa memakan waktu beberapa menit. Jangan menutup halaman ini.', actions: [], dismiss: false });
   try {
     // Tanpa header Content-Type => text/plain => tidak ada preflight CORS
     const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'run', job, token }) });
     const json = await res.json();
     if (!json.ok) { sessionStorage.removeItem('dastmon_token'); throw new Error(json.error); }
     sessionStorage.setItem('dastmon_token', token);
-    await load();
-    say(`✅ ${json.count} data diperbarui.`);
-  } catch (e) { say('❌ ' + e.message); }
-  if ($('run')) $('run').disabled = false;
+    await load(true);
+    modal({ type: 'success', title: 'Scraper selesai', text: `${json.count} data berhasil diperbarui.` });
+  } catch (e) { modal({ type: 'error', title: 'Scraper gagal', text: e.message }); }
+  $('run').disabled = false;
 }
 
-$('sync').onclick = load;
+$('run').onclick = () => { const d = DATA[route]; if (d) runJob(d.job); };
+$('sync').onclick = () => load(false);
 window.addEventListener('hashchange', go);
 go();
-load();
-setInterval(load, REFRESH_MS);
+load(false);
+setInterval(() => load(true), REFRESH_MS);
