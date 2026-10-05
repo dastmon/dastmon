@@ -27,7 +27,7 @@ const TABS = {
   teepublic: { label: 'TeePublic Tags', key: 'teepublic', cols: [
     ['#', (r, i) => i + 1, 'text-center w-16'],
     ['Tag', r => esc(r.tag), 'font-semibold text-emerald-400'],
-    ['Niche', r => esc(r.niche)],
+    ['AI Category', r => esc(r.niche)],
     ['Analisis AI', r => esc(r.analysis), 'text-slate-400'],
     ['Copyright (perkiraan AI)', r => badge(r.copyright), 'text-center'],
     ['Scraped At', r => esc(r.timestamp), 'text-right text-xs font-mono text-slate-500']] }
@@ -50,7 +50,7 @@ async function load() {
 
 function render() {
   const s = data?.stats || {};
-  $('stats').innerHTML = [['Day Trends', s.totalTrends], ['Kategori', s.trendCategories], ['Tag TeePublic', s.totalTeeTags], ['Niche', s.teeNiches]]
+  $('stats').innerHTML = [['Day Trends', s.totalTrends], ['Kategori', s.trendCategories], ['Tag TeePublic', s.totalTeeTags], ['Kategori Tee', s.teeNiches]]
     .map(([l, v]) => `<div class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4"><p class="text-xs text-slate-400">${l}</p><p class="text-2xl font-bold mt-1">${esc(v ?? '--')}</p></div>`).join('');
 
   $('tabs').innerHTML = Object.entries(TABS).map(([id, t]) =>
