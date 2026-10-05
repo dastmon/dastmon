@@ -847,12 +847,16 @@ pre[class*="language-"] {
 /* DASTMON: sidebar mini (xl) - pengganti aturan .sidebar:hover template */
 .logo-icon{display:none}.menu-group-icon{display:none}
 @media (min-width:1280px){
-  .sidebar.sb-min:not(:hover){width:90px}
+  .sidebar.sb-min:not(:hover){width:64px}
   .sidebar.sb-min:not(:hover) :is(.menu-item-text,.menu-item-arrow,.menu-dropdown,.menu-group-title,.logo){display:none}
   .sidebar.sb-min:not(:hover) .logo-icon{display:flex}
   .sidebar.sb-min:not(:hover) .menu-group-icon{display:block}
   .sidebar.sb-min:not(:hover) .sidebar-header{justify-content:center}
 }
+/* DASTMON: mode compact */
+.menu-item{padding-block:.4375rem;font-size:13px}
+.menu-dropdown-item{padding-block:.375rem;font-size:13px}
+@media (min-width:1280px){.sidebar.sb-min:not(:hover) .menu-item{padding-inline:.5rem;justify-content:center}}
   </style>
 </head>
 <body>
