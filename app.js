@@ -1,5 +1,5 @@
 // === KONFIGURASI: tempel URL Web App (berakhiran /exec) ===
-const API_URL = 'GANTI_DENGAN_URL_WEB_APP/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyDoByjuZsbhlTykBp6RjQQQvEHqwcusB9rc5EKB6BaSm1l27Bz-vkkHS0Zm43u8n9gMw/exec';
 const REFRESH_MS = 5 * 60 * 1000;
 
 const $ = id => document.getElementById(id);
