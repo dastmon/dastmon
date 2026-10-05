@@ -15,11 +15,28 @@ async function getTags() {
     process.exit(1);
   }
   const html = await res.text();
-  const re = /<a[^>]+href="\/t-shirts\/([^"?\s>]+)"[^>]*>([^<]*)<\/a>/g;
+
+  // Pencocokan longgar: href relatif/absolut, kutip tunggal/ganda, teks boleh dibungkus tag lain
+  const re = /<a\b[^>]*?href=["'](?:https?:\/\/(?:www\.)?teepublic\.com)?\/t-shirts\/([^"'?#\s>]+)[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
   const seen = new Set(), tags = [];
   for (const m of html.matchAll(re)) {
-    const t = (m[2].trim() || toTitle(m[1])).trim();
+    const text = m[2].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    const t = text || toTitle(m[1]);
     if (t.length > 1 && !seen.has(t) && !BLACKLIST.some(b => t.includes(b))) { seen.add(t); tags.push(t); }
+  }
+
+  if (!tags.length) {
+    // Diagnosis: tampilkan apa yang sebenarnya diterima
+    const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1]?.trim();
+    const hrefs = [...html.matchAll(/<a\b[^>]*?href=["']([^"']+)["']/gi)].map(m => m[1]);
+    console.log('--- DIAGNOSIS ---');
+    console.log('Panjang HTML :', html.length);
+    console.log('Title        :', title);
+    console.log('Jumlah <a>   :', hrefs.length);
+    console.log('Contoh href  :', hrefs.slice(0, 25));
+    console.log('Ada "t-shirts":', html.includes('t-shirts'), '| Ada "captcha/challenge":', /captcha|challenge|cf-|just a moment/i.test(html));
+    console.log('Awal HTML    :', html.slice(0, 400).replace(/\s+/g, ' '));
+    console.log('-----------------');
   }
   return tags;
 }
