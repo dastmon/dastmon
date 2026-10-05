@@ -4,7 +4,7 @@ const IC = {"Charts": "<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M12
 // === KONFIGURASI: URL Web App (berakhiran /exec) ===
 const API_URL = 'https://script.google.com/macros/s/AKfycbyDoByjuZsbhlTykBp6RjQQQvEHqwcusB9rc5EKB6BaSm1l27Bz-vkkHS0Zm43u8n9gMw/exec';
 const REFRESH_MS = 5 * 60 * 1000;
-const PER = 10; // baris per halaman
+const PER = 15; // baris per halaman
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -12,11 +12,11 @@ const sv = (inner, cls = '', w = 24, h = 24, vb = '0 0 24 24') => `<svg class="$
 
 // ---------- Kelas TailAdmin (disalin dari partials) ----------
 const CARD = 'rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/3';
-const H3 = 'text-lg font-semibold text-gray-800 dark:text-white/90';
-const SUB = 'text-theme-sm mt-1 text-gray-500 dark:text-gray-400';
-const BTN_O = 'text-theme-sm shadow-theme-xs inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/3 dark:hover:text-gray-200';
-const BTN = 'text-theme-sm shadow-theme-xs inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-300';
-const SELECT = 'shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90';
+const H3 = 'text-base font-semibold text-gray-800 dark:text-white/90';
+const SUB = 'text-theme-xs mt-0.5 text-gray-500 dark:text-gray-400';
+const BTN_O = 'text-theme-xs shadow-theme-xs inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/3 dark:hover:text-gray-200';
+const BTN = 'text-theme-xs shadow-theme-xs inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 py-1.5 font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-300';
+const SELECT = 'shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-3 py-1.5 pr-9 text-theme-xs text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90';
 const OPT = 'text-gray-700 dark:bg-gray-900 dark:text-gray-400';
 const CHEV = '<path d="M4.79175 7.39584L10.0001 12.6042L15.2084 7.39585" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
 
@@ -38,9 +38,9 @@ const nk = v => { v = String(v || '').toLowerCase(); return v === 'high' ? 'High
 const badge = v => `<p class="${RISK[nk(v)][1]} text-theme-xs inline-block rounded-full px-2 py-0.5 font-medium">${RISK[nk(v)][0]}</p>`;
 
 // ---------- Sel tabel ----------
-const P1 = t => `<p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">${t}</p>`;
-const P2 = t => `<p class="text-theme-sm text-gray-500 dark:text-gray-400">${t}</p>`;
-const PB = t => `<p class="text-theme-sm font-medium text-brand-500 dark:text-brand-400">${t}</p>`;
+const P1 = t => `<p class="text-theme-xs font-medium text-gray-800 dark:text-white/90">${t}</p>`;
+const P2 = t => `<p class="text-theme-xs text-gray-500 dark:text-gray-400">${t}</p>`;
+const PB = t => `<p class="text-theme-xs font-medium text-brand-500 dark:text-brand-400">${t}</p>`;
 const PT = t => `<p class="text-theme-xs text-gray-400">${t}</p>`;
 
 const DATA = {
@@ -76,11 +76,11 @@ const pageName = r => { const [g, s] = r.split('/'); return MENU.find(x => x[0] 
 $('app').innerHTML = `
 <div id="pre" class="fixed top-0 left-0 z-999999 flex h-screen w-screen items-center justify-center bg-white dark:bg-black"><div class="border-brand-500 h-16 w-16 animate-spin rounded-full border-4 border-solid border-t-transparent"></div></div>
 <div class="flex h-screen overflow-hidden">
-  <aside id="side" class="sidebar fixed top-0 left-0 z-9999 flex h-screen w-72.5 -translate-x-full flex-col overflow-y-auto border-r border-gray-200 bg-white px-5 transition-all duration-300 xl:static xl:translate-x-0 dark:border-gray-800 dark:bg-black">
-    <div class="sidebar-header flex items-center justify-between gap-2 pt-8 pb-7">
+  <aside id="side" class="sidebar fixed top-0 left-0 z-9999 flex h-screen w-60 -translate-x-full flex-col overflow-y-auto border-r border-gray-200 bg-white px-3 transition-all duration-300 xl:static xl:translate-x-0 dark:border-gray-800 dark:bg-black">
+    <div class="sidebar-header flex items-center justify-between gap-2 pt-4 pb-3">
       <a href="#trending/us">
-        <span class="logo flex items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 text-white">${sv(IC.Charts, 'fill-current', 20, 20)}</span><span class="text-xl font-bold text-gray-800 dark:text-white/90">DASTMON</span></span>
-        <span class="logo-icon flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 text-white">${sv(IC.Charts, 'fill-current', 20, 20)}</span>
+        <span class="logo flex items-center gap-3"><span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">${sv(IC.Charts, 'fill-current', 20, 20)}</span><span class="text-xl font-bold text-gray-800 dark:text-white/90">DASTMON</span></span>
+        <span class="logo-icon flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">${sv(IC.Charts, 'fill-current', 20, 20)}</span>
       </a>
     </div>
     <div class="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear"><nav id="nav"></nav></div>
@@ -89,30 +89,30 @@ $('app').innerHTML = `
     <div id="ov" class="fixed w-full h-screen z-9 bg-gray-900/50 hidden"></div>
     <header class="sticky top-0 z-99999 flex w-full border-gray-200 bg-white xl:border-b dark:border-gray-800 dark:bg-gray-900">
       <div class="flex grow flex-col items-center justify-between xl:flex-row xl:px-6">
-        <div class="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-3 py-3 sm:gap-4 lg:py-4 xl:justify-normal xl:border-b-0 xl:px-0 dark:border-gray-800">
-          <button id="burger" aria-label="Menu" class="z-99999 flex h-10 w-10 items-center justify-center rounded-lg border-gray-200 text-gray-500 xl:h-11 xl:w-11 xl:border dark:border-gray-800 dark:text-gray-400">
+        <div class="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-3 py-2 sm:gap-4 lg:py-2 xl:justify-normal xl:border-b-0 xl:px-0 dark:border-gray-800">
+          <button id="burger" aria-label="Menu" class="z-99999 flex h-9 w-9 items-center justify-center rounded-lg border-gray-200 text-gray-500 xl:h-9 xl:w-9 xl:border dark:border-gray-800 dark:text-gray-400">
             ${sv(IC.h0, 'hidden fill-current xl:block', 16, 12, '0 0 16 12')}${sv(IC.h1, 'fill-current xl:hidden block')}${sv(IC.h2, 'fill-current hidden')}
           </button>
           <a href="#trending/us" class="flex items-center gap-2 xl:hidden"><span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">${sv(IC.Charts, 'fill-current', 18, 18)}</span><span class="text-lg font-bold text-gray-800 dark:text-white/90">DASTMON</span></a>
-          <button id="appmenu" aria-label="Menu aplikasi" class="z-99999 flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 xl:hidden dark:text-gray-400 dark:hover:bg-gray-800">${sv(IC.h3, 'fill-current')}</button>
+          <button id="appmenu" aria-label="Menu aplikasi" class="z-99999 flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 xl:hidden dark:text-gray-400 dark:hover:bg-gray-800">${sv(IC.h3, 'fill-current')}</button>
           <div class="hidden xl:block">
             <div class="relative">
               <span class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2">${sv(IC.h4, 'fill-gray-500 dark:fill-gray-400', 20, 20, '0 0 20 20')}</span>
-              <input id="gq" type="text" placeholder="Cari data di tabel..." class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pr-14 pl-12 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden xl:w-107.5 dark:border-gray-800 dark:bg-white/3 dark:text-white/90 dark:placeholder:text-white/30">
+              <input id="gq" type="text" placeholder="Cari data di tabel..." class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full rounded-lg border border-gray-200 bg-transparent py-1.5 pr-14 pl-11 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden xl:w-107.5 dark:border-gray-800 dark:bg-white/3 dark:text-white/90 dark:placeholder:text-white/30">
               <span class="absolute top-1/2 right-2.5 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-1.75 py-[4.5px] text-xs tracking-[-0.2px] text-gray-500 dark:border-gray-800 dark:bg-white/3 dark:text-gray-400"><span>⌘</span><span>K</span></span>
             </div>
           </div>
         </div>
-        <div id="hr" class="hidden shadow-theme-md w-full items-center justify-between gap-4 px-5 py-4 xl:flex xl:justify-end xl:px-0 xl:shadow-none">
+        <div id="hr" class="hidden shadow-theme-md w-full items-center justify-between gap-4 px-5 py-2 xl:flex xl:justify-end xl:px-0 xl:shadow-none">
           <p class="text-theme-sm text-gray-500 dark:text-gray-400">Update: <span id="updated">-</span></p>
           <div class="2xsm:gap-3 flex items-center gap-2">
-            <button id="theme" aria-label="Ganti tema" class="relative flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">${sv(IC.h5, 'hidden dark:block', 20, 20, '0 0 20 20')}${sv(IC.h6, 'dark:hidden', 20, 20, '0 0 20 20')}</button>
-            <button id="sync" class="${BTN} h-11">Sync</button>
+            <button id="theme" aria-label="Ganti tema" class="relative flex h-9 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">${sv(IC.h5, 'hidden dark:block', 20, 20, '0 0 20 20')}${sv(IC.h6, 'dark:hidden', 20, 20, '0 0 20 20')}</button>
+            <button id="sync" class="${BTN} h-9">Sync</button>
           </div>
         </div>
       </div>
     </header>
-    <main><div id="view" class="mx-auto max-w-(--breakpoint-2xl) p-4 pb-20 md:p-6 md:pb-6"></div></main>
+    <main><div id="view" class="mx-auto max-w-(--breakpoint-2xl) p-3 pb-16 md:p-4 md:pb-4"></div></main>
   </div>
 </div>`;
 
@@ -122,13 +122,13 @@ const ARROW = a => `<svg class="menu-item-arrow ${a ? 'menu-item-arrow-active' :
 function renderNav() {
   const g0 = route.split('/')[0];
   $('nav').innerHTML = `<div>
-    <h3 class="mb-4 text-xs leading-5 text-gray-400 uppercase"><span class="menu-group-title">Menu</span>
+    <h3 class="mb-2 text-xs leading-5 text-gray-400 uppercase"><span class="menu-group-title">Menu</span>
       <svg class="menu-group-icon mx-auto fill-current" width="24" height="24" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.75"/><circle cx="12" cy="12" r="1.75"/><circle cx="18" cy="12" r="1.75"/></svg></h3>
-    <ul class="mb-6 flex flex-col gap-1">${MENU.map(([g, l, ic, subs]) => {
+    <ul class="mb-4 flex flex-col gap-0.5">${MENU.map(([g, l, ic, subs]) => {
       const open = selected === g, act = open || g0 === g;
       return `<li><a href="#" data-g="${g}" class="menu-item group ${act ? 'menu-item-active' : 'menu-item-inactive'}">
         ${sv(ic, act ? 'menu-item-icon-active' : 'menu-item-icon-inactive')}<span class="menu-item-text">${l}</span>${ARROW(open)}</a>
-        <div class="overflow-hidden transform translate ${open ? 'block' : 'hidden'}"><ul class="menu-dropdown mt-2 flex flex-col gap-1 pl-9">
+        <div class="overflow-hidden transform translate ${open ? 'block' : 'hidden'}"><ul class="menu-dropdown mt-1 flex flex-col gap-0.5 pl-9">
         ${subs.map(([s, sl]) => `<li><a href="#${g}/${s}" class="menu-dropdown-item group ${route === g + '/' + s ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive'}">${sl}</a></li>`).join('')}
         </ul></div></li>`;
     }).join('')}</ul></div>`;
@@ -181,8 +181,8 @@ function go() {
   update();
 }
 
-const crumb = () => `<div class="flex flex-wrap items-center justify-between gap-3 pb-6">
-  <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">${esc(pageName(route))}</h2>
+const crumb = () => `<div class="flex flex-wrap items-center justify-between gap-3 pb-3">
+  <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">${esc(pageName(route))}</h2>
   <nav><ol class="flex items-center gap-1.5">
     <li><a class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400" href="#trending/us">Home
       <svg class="stroke-current" width="17" height="16" viewBox="0 0 17 16" fill="none"><path d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366" stroke="" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
@@ -190,41 +190,32 @@ const crumb = () => `<div class="flex flex-wrap items-center justify-between gap
   </ol></nav></div>`;
 
 function soon() {
-  $('view').innerHTML = crumb() + `<div class="min-h-80 ${CARD} px-5 py-7 xl:px-10 xl:py-12"><div class="mx-auto w-full max-w-157.5 text-center">
+  $('view').innerHTML = crumb() + `<div class="min-h-40 ${CARD} px-5 py-6"><div class="mx-auto w-full max-w-157.5 text-center">
     <h3 class="text-theme-xl mb-4 font-semibold text-gray-800 sm:text-2xl dark:text-white/90">Data belum tersedia</h3>
     <p class="text-sm text-gray-500 sm:text-base dark:text-gray-400">Menu ini belum punya sumber data. Tambahkan scraper dan sheet di backend (code.gs), lalu daftarkan di <code>DATA</code> pada app.js agar chart dan tabel muncul di sini.</p></div></div>`;
 }
 
 function shell(d) {
   $('view').innerHTML = crumb() + `
-  <p id="msg" class="text-theme-sm pb-4 text-gray-500 empty:hidden dark:text-gray-400"></p>
-  <div class="grid grid-cols-12 gap-4 md:gap-6">
-    <div class="col-span-12 space-y-6 xl:col-span-7">
-      <div id="stats" class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6"></div>
-      <div class="overflow-hidden ${CARD} px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
-        <h3 class="${H3}">Distribusi Kategori</h3><p class="${SUB} mb-4">Jumlah data per kategori hasil analisis AI</p>
-        <div id="c1"></div></div>
-    </div>
-    <div class="col-span-12 xl:col-span-5">
-      <div class="rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-white/3">
-        <div class="shadow-default rounded-2xl bg-white px-5 pt-5 pb-8 sm:px-6 sm:pt-6 dark:bg-gray-900">
-          <h3 class="${H3}">Risiko Copyright</h3><p class="${SUB} mb-4">Perkiraan AI, bukan nasihat hukum</p>
-          <div id="c2"></div></div></div>
-    </div>
-    <div class="col-span-12">
-      <div class="overflow-hidden ${CARD} px-4 pt-4 pb-3 sm:px-6">
-        <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div><h3 class="${H3}">Data</h3><p id="count" class="${SUB}"></p></div>
-          <div class="flex items-center gap-3">
-            <div class="relative z-20 bg-transparent"><select id="rf" class="${SELECT} sm:w-44">
-              <option value="" class="${OPT}">Semua risiko</option><option class="${OPT}">High</option><option class="${OPT}">Medium</option><option class="${OPT}">Low</option><option class="${OPT}">Unknown</option></select>
-              <span class="pointer-events-none absolute top-1/2 right-4 z-30 -translate-y-1/2 stroke-current text-gray-500 dark:text-gray-400"><svg width="20" height="20" viewBox="0 0 20 20" fill="none">${CHEV}</svg></span></div>
-            <button id="run" class="${BTN} h-11 whitespace-nowrap">Jalankan scraper</button>
-          </div>
+  <p id="msg" class="text-theme-xs pb-2 text-gray-500 empty:hidden dark:text-gray-400"></p>
+  <div class="grid grid-cols-12 gap-3">
+    <div id="stats" class="col-span-12 grid grid-cols-2 gap-3 xl:grid-cols-4"></div>
+    <div class="col-span-12 xl:col-span-8 ${CARD} p-4">
+      <h3 class="${H3}">Distribusi Kategori</h3><p class="${SUB} mb-2">Jumlah data per kategori hasil analisis AI</p><div id="c1"></div></div>
+    <div class="col-span-12 xl:col-span-4 ${CARD} p-4">
+      <h3 class="${H3}">Risiko Copyright</h3><p class="${SUB} mb-2">Perkiraan AI, bukan nasihat hukum</p><div id="c2"></div></div>
+    <div class="col-span-12 overflow-hidden ${CARD} px-4 pt-3 pb-2">
+      <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div><h3 class="${H3}">Data</h3><p id="count" class="${SUB}"></p></div>
+        <div class="flex items-center gap-2">
+          <div class="relative z-20 bg-transparent"><select id="rf" class="${SELECT} sm:w-40">
+            <option value="" class="${OPT}">Semua risiko</option><option class="${OPT}">High</option><option class="${OPT}">Medium</option><option class="${OPT}">Low</option><option class="${OPT}">Unknown</option></select>
+            <span class="pointer-events-none absolute top-1/2 right-3 z-30 -translate-y-1/2 stroke-current text-gray-500 dark:text-gray-400"><svg width="16" height="16" viewBox="0 0 20 20" fill="none">${CHEV}</svg></span></div>
+          <button id="run" class="${BTN} h-9 whitespace-nowrap">Jalankan scraper</button>
         </div>
-        <div class="custom-scrollbar max-w-full overflow-x-auto"><table class="min-w-full"><thead id="thead" class="border-y border-gray-100 dark:border-gray-800"></thead><tbody id="tbody" class="divide-y divide-gray-100 py-3 dark:divide-gray-800"></tbody></table></div>
-        <div id="pager" class="flex items-center justify-between gap-3 border-t border-gray-100 py-4 dark:border-gray-800"></div>
       </div>
+      <div class="custom-scrollbar max-w-full overflow-x-auto"><table class="min-w-full"><thead id="thead" class="border-y border-gray-100 dark:border-gray-800"></thead><tbody id="tbody" class="divide-y divide-gray-100 dark:divide-gray-800"></tbody></table></div>
+      <div id="pager" class="flex items-center justify-between gap-3 border-t border-gray-100 py-2 dark:border-gray-800"></div>
     </div>
   </div>`;
   $('run').onclick = () => runJob(d.job);
@@ -242,7 +233,7 @@ function draw(id, opt) {
     chart: { fontFamily: 'Outfit, sans-serif', toolbar: { show: false }, foreColor: dark ? '#98a2b3' : '#667085', background: 'transparent', ...opt.chart },
     theme: { mode: dark ? 'dark' : 'light' },
     grid: { borderColor: dark ? '#1d2939' : '#e4e7ec', xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
-    legend: { show: true, position: 'bottom', horizontalAlign: 'center', fontFamily: 'Outfit', markers: { radius: 99 } }
+    legend: { show: true, position: 'bottom', horizontalAlign: 'center', fontFamily: 'Outfit', fontSize: '12px', markers: { radius: 99, size: 5 }  }
   });
   charts[id].render();
 }
@@ -253,7 +244,7 @@ const SI = {
   high: '<path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>',
   low: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4"/>'
 };
-const sIcon = p => `<svg class="stroke-gray-800 dark:stroke-white/90" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const sIcon = p => `<svg class="stroke-gray-800 dark:stroke-white/90" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 
 // ---------- Render dinamis ----------
 function update() {
@@ -263,24 +254,24 @@ function update() {
   const risks = count(all, r => nk(d.risk(r)));
   const cats = Object.entries(count(all.filter(r => d.cat(r) && d.cat(r) !== '-'), d.cat)).sort((a, b) => b[1] - a[1]);
   const pct = n => (all.length ? Math.round(n / all.length * 100) : 0) + '%';
-  const pill = (t, c) => `<span class="${c} flex items-center gap-1 rounded-full py-0.5 pr-2.5 pl-2 text-sm font-medium">${t}</span>`;
+  const pill = (t, c) => `<span class="${c} flex items-center gap-1 rounded-full px-2 py-0.5 text-theme-xs font-medium">${t}</span>`;
 
   $('stats').innerHTML = [
     ['Total Data', all.length, SI.total, ''],
     ['Kategori', cats.length, SI.cat, ''],
     ['High Risk', risks.High || 0, SI.high, pill(pct(risks.High || 0), 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500')],
     ['Low Risk', risks.Low || 0, SI.low, pill(pct(risks.Low || 0), 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500')]
-  ].map(([l, v, ic, b]) => `<div class="rounded-2xl border border-gray-200 bg-white p-5 md:p-6 dark:border-gray-800 dark:bg-white/3">
-    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">${sIcon(ic)}</div>
-    <div class="mt-5 flex items-end justify-between"><div><span class="text-sm text-gray-500 dark:text-gray-400">${l}</span>
-    <h4 class="text-title-sm mt-2 font-bold text-gray-800 dark:text-white/90">${esc(v)}</h4></div>${b}</div></div>`).join('');
+  ].map(([l, v, ic, b]) => `<div class="flex items-center gap-3 ${CARD} p-3">
+    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">${sIcon(ic)}</div>
+    <div class="min-w-0 flex-1"><span class="text-theme-xs text-gray-500 dark:text-gray-400">${l}</span>
+    <h4 class="text-xl leading-6 font-bold text-gray-800 dark:text-white/90">${esc(v)}</h4></div>${b}</div>`).join('');
 
   if (cats.length) {
     draw('c1', {
       series: [{ name: 'Jumlah', data: cats.map(c => c[1]) }],
       colors: ['#465fff'],
-      chart: { type: 'bar', height: Math.max(220, cats.length * 34) },
-      plotOptions: { bar: { horizontal: true, barHeight: '45%', borderRadius: 5, borderRadiusApplication: 'end' } },
+      chart: { type: 'bar', height: Math.max(150, cats.length * 24) },
+      plotOptions: { bar: { horizontal: true, barHeight: '55%', borderRadius: 5, borderRadiusApplication: 'end' } },
       dataLabels: { enabled: false },
       xaxis: { categories: cats.map(c => c[0]), axisBorder: { show: false }, axisTicks: { show: false } },
       legend: { show: false },
@@ -292,10 +283,10 @@ function update() {
   if (all.length) {
     draw('c2', {
       series: keys.map(k => risks[k] || 0), labels: keys.map(k => RISK[k][0]), colors: keys.map(k => RISK[k][2]),
-      chart: { type: 'donut', height: 330 },
+      chart: { type: 'donut', height: 230 },
       stroke: { width: 0 },
       dataLabels: { enabled: false },
-      plotOptions: { pie: { donut: { size: '80%', labels: { show: true, name: { show: false }, value: { fontSize: '36px', fontWeight: 600, offsetY: 12, color: dark ? '#f9fafb' : '#1d2939' }, total: { show: true, label: 'Total', fontSize: '14px', color: '#667085', formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0) } } } } }
+      plotOptions: { pie: { donut: { size: '75%', labels: { show: true, name: { show: false }, value: { fontSize: '26px', fontWeight: 600, offsetY: 8, color: dark ? '#f9fafb' : '#1d2939' }, total: { show: true, label: 'Total', fontSize: '14px', color: '#667085', formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0) } } } } }
     });
   } else { charts.c2?.destroy(); delete charts.c2; $('c2').innerHTML = `<p class="text-theme-sm text-gray-500 dark:text-gray-400">Belum ada data.</p>`; }
 
@@ -307,11 +298,11 @@ function update() {
   const nw = c => (c[2] || '').includes('min-w') ? '' : 'whitespace-nowrap';
 
   $('count').textContent = `${rows.length} dari ${all.length} data`;
-  $('thead').innerHTML = `<tr>${d.cols.map(c => `<th class="px-6 py-3 ${nw(c)} first:pl-0 text-left"><div class="flex items-center"><p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">${c[0]}</p></div></th>`).join('')}</tr>`;
+  $('thead').innerHTML = `<tr>${d.cols.map(c => `<th class="px-3 py-2 ${nw(c)} first:pl-0 text-left"><div class="flex items-center"><p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">${c[0]}</p></div></th>`).join('')}</tr>`;
   $('tbody').innerHTML = part.length
-    ? part.map((r, i) => `<tr>${d.cols.map(c => `<td class="px-6 py-3 ${nw(c)} ${c[2] || ''} first:pl-0"><div class="flex items-center">${c[1](r, from + i + 1)}</div></td>`).join('')}</tr>`).join('')
-    : `<tr><td colspan="${d.cols.length}" class="py-10 text-center text-theme-sm text-gray-500 dark:text-gray-400">Tidak ada data.</td></tr>`;
-  $('pager').innerHTML = `<span class="text-theme-sm text-gray-500 dark:text-gray-400">${rows.length ? `Menampilkan ${from + 1}–${from + part.length} dari ${rows.length}` : '0 data'}</span>
+    ? part.map((r, i) => `<tr>${d.cols.map(c => `<td class="px-3 py-1.5 ${nw(c)} ${c[2] || ''} first:pl-0"><div class="flex items-center">${c[1](r, from + i + 1)}</div></td>`).join('')}</tr>`).join('')
+    : `<tr><td colspan="${d.cols.length}" class="py-6 text-center text-theme-xs text-gray-500 dark:text-gray-400">Tidak ada data.</td></tr>`;
+  $('pager').innerHTML = `<span class="text-theme-xs text-gray-500 dark:text-gray-400">${rows.length ? `Menampilkan ${from + 1}–${from + part.length} dari ${rows.length}` : '0 data'}</span>
     <div class="flex gap-2"><button class="${BTN_O}" data-pg="-1" ${pg === 0 ? 'disabled' : ''}>Sebelumnya</button>
     <button class="${BTN_O}" data-pg="1" ${pg >= pages - 1 ? 'disabled' : ''}>Berikutnya</button></div>`;
 }
