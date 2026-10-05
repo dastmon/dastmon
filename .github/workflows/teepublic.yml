@@ -1,0 +1,26 @@
+name: Fetch TeePublic tags
+
+on:
+  schedule:
+    - cron: '0 1 * * *'        # tiap hari 08:00 WIB
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Tes saja (ambil & hitung tag, TIDAK kirim ke backend)'
+        type: boolean
+        default: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Ambil tag dan kirim ke backend
+        run: node scripts/fetch-tags.mjs
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
