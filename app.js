@@ -17,6 +17,7 @@ const SUB = 'text-theme-xs mt-0.5 text-gray-500 dark:text-gray-400';
 const BTN_O = 'text-theme-xs shadow-theme-xs inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/3 dark:hover:text-gray-200';
 const BTN = 'text-theme-xs shadow-theme-xs inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-3 py-1.5 font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-300';
 const SELECT = 'shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-3 py-1.5 pr-9 text-theme-xs text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90';
+const FSEL = SELECT.replace('h-9', 'h-11 sm:h-9').replace('text-theme-xs', 'text-base sm:text-theme-xs');
 const OPT = 'text-gray-700 dark:bg-gray-900 dark:text-gray-400';
 const BTN_I = 'shadow-theme-xs inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/3 dark:hover:text-gray-200';
 const PBTN = (dir, ic, lbl, dis) => `<button class="${BTN_I}" data-pg="${dir}" aria-label="${lbl}" ${dis ? 'disabled' : ''}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ic}</svg></button>`;
@@ -45,30 +46,34 @@ const P2 = t => `<p class="text-theme-xs text-gray-500 dark:text-gray-400">${t}<
 const PB = t => `<p class="text-theme-xs font-medium text-brand-500 dark:text-brand-400">${t}</p>`;
 const PT = t => `<p class="text-theme-xs text-gray-400">${t}</p>`;
 
+// Baris kecil di bawah judul pada layar kecil (kategori + deskripsi), karena kolomnya disembunyikan
+const mob = (cat, txt) => `<div class="mt-0.5 lg:hidden"><span class="text-theme-xs font-medium text-brand-500 sm:hidden dark:text-brand-400">${esc(cat)}</span><p class="text-theme-xs line-clamp-2 text-gray-500 dark:text-gray-400">${esc(txt)}</p></div>`;
+
+// cols: [judul, render(row, nomor), kelas sel, kelas visibilitas responsif]
 const DATA = {
   'trending/us': {
     key: 'trends', job: 'trends', cat: r => r.category, risk: r => r.copyright,
     cols: [
-      ['Rank', r => P2(esc(r.rank))],
-      ['Trending Topic', r => P1(esc(r.topic))],
-      ['Kategori AI', r => P2(esc(r.category))],
-      ['Deskripsi AI', r => P2(esc(r.desc)), 'min-w-64'],
-      ['Copyright (perkiraan AI)', r => badge(r.copyright)],
-      ['Scraped At', r => PT(esc(r.timestamp))]]
+      ['Rank', r => P2(esc(r.rank)), '', ''],
+      ['Trending Topic', r => P1(esc(r.topic)) + mob(r.category, r.desc), 'min-w-36', ''],
+      ['Kategori AI', r => P2(esc(r.category)), '', 'hidden sm:table-cell'],
+      ['Deskripsi AI', r => P2(esc(r.desc)), 'min-w-64', 'hidden lg:table-cell'],
+      ['Copyright (perkiraan AI)', r => badge(r.copyright), '', ''],
+      ['Scraped At', r => PT(esc(r.timestamp)), '', 'hidden md:table-cell']]
   },
   'trending/teepublic': {
     key: 'teepublic', job: 'teepublic', cat: r => r.niche, risk: r => r.copyright,
     cols: [
-      ['#', (r, i) => P2(i)],
-      ['Tag', r => PB(esc(r.tag))],
-      ['AI Category', r => P2(esc(r.niche))],
-      ['Analisis AI', r => P2(esc(r.analysis)), 'min-w-64'],
-      ['Copyright (perkiraan AI)', r => badge(r.copyright)],
-      ['Scraped At', r => PT(esc(r.timestamp))]]
+      ['#', (r, i) => P2(i), '', ''],
+      ['Tag', r => PB(esc(r.tag)) + mob(r.niche, r.analysis), 'min-w-36', ''],
+      ['AI Category', r => P2(esc(r.niche)), '', 'hidden sm:table-cell'],
+      ['Analisis AI', r => P2(esc(r.analysis)), 'min-w-64', 'hidden lg:table-cell'],
+      ['Copyright (perkiraan AI)', r => badge(r.copyright), '', ''],
+      ['Scraped At', r => PT(esc(r.timestamp)), '', 'hidden md:table-cell']]
   }
 };
 
-let data = null, loading = true, route = '', pg = 0, selected = '', sidebarToggle = false, menuToggle = false;
+let data = null, loading = true, route = '', pg = 0, fCat = '', fRisk = '', selected = '', sidebarToggle = false, menuToggle = false;
 let dark = JSON.parse(localStorage.getItem('darkMode') || 'false');
 const charts = {};
 const pageName = r => { const [g, s] = r.split('/'); return MENU.find(x => x[0] === g)?.[3].find(x => x[0] === s)?.[1] || ''; };
@@ -76,42 +81,33 @@ const pageName = r => { const [g, s] = r.split('/'); return MENU.find(x => x[0] 
 // ---------- Kerangka halaman (sama dengan index.html template) ----------
 $('app').innerHTML = `
 <div id="pre" class="fixed top-0 left-0 z-999999 flex h-screen w-screen items-center justify-center bg-white dark:bg-black"><div class="border-brand-500 h-16 w-16 animate-spin rounded-full border-4 border-solid border-t-transparent"></div></div>
-<div id="modal" class="fixed inset-0 z-999999 hidden items-center justify-center bg-gray-900/50 p-5 backdrop-blur-sm"></div>
-<div class="flex h-screen overflow-hidden">
-  <aside id="side" class="sidebar fixed top-0 left-0 z-9999 flex h-screen w-60 -translate-x-full flex-col overflow-y-auto border-r border-gray-200 bg-white px-3 transition-all duration-300 xl:static xl:translate-x-0 dark:border-gray-800 dark:bg-black">
+<div id="modal" class="fixed inset-0 z-9999999 hidden items-center justify-center bg-gray-900/50 p-5 backdrop-blur-sm"></div>
+<div class="flex h-dvh overflow-hidden">
+  <aside id="side" class="sidebar fixed top-0 left-0 z-999999 flex h-dvh w-60 -translate-x-full flex-col overflow-y-auto border-r border-gray-200 bg-white px-3 transition-all duration-300 xl:static xl:translate-x-0 dark:border-gray-800 dark:bg-black">
     <div class="sidebar-header flex items-center justify-between gap-2 pt-4 pb-3">
       <a href="#trending/us">
         <span class="logo flex items-center gap-3"><span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">${sv(IC.Charts, 'fill-current', 20, 20)}</span><span class="text-xl font-bold text-gray-800 dark:text-white/90">DASTMON</span></span>
         <span class="logo-icon flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">${sv(IC.Charts, 'fill-current', 20, 20)}</span>
       </a>
+      <button id="sclose" aria-label="Tutup menu" class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 xl:hidden dark:text-gray-400 dark:hover:bg-gray-800">${sv('<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>', '', 20, 20)}</button>
     </div>
     <div class="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear"><nav id="nav"></nav></div>
   </aside>
   <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
-    <div id="ov" class="fixed w-full h-screen z-9 bg-gray-900/50 hidden"></div>
-    <header class="sticky top-0 z-99999 flex w-full border-gray-200 bg-white xl:border-b dark:border-gray-800 dark:bg-gray-900">
-      <div class="flex grow flex-col items-center justify-between xl:flex-row xl:px-6">
-        <div class="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-3 py-2 sm:gap-4 lg:py-2 xl:justify-normal xl:border-b-0 xl:px-0 dark:border-gray-800">
-          <button id="burger" aria-label="Menu" class="z-99999 flex h-9 w-9 items-center justify-center rounded-lg border-gray-200 text-gray-500 xl:h-9 xl:w-9 xl:border dark:border-gray-800 dark:text-gray-400">
+    <div id="ov" class="fixed w-full h-dvh z-999998 bg-gray-900/50 hidden"></div>
+    <header class="sticky top-0 z-99999 flex w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <div class="flex grow items-center justify-between gap-2 px-3 py-2 xl:px-6">
+        <div class="flex min-w-0 items-center gap-2 sm:gap-3">
+          <button id="burger" aria-label="Menu" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 xl:h-9 xl:w-9 dark:border-gray-800 dark:text-gray-400">
             ${sv(IC.h0, 'hidden fill-current xl:block', 16, 12, '0 0 16 12')}${sv(IC.h1, 'fill-current xl:hidden block')}${sv(IC.h2, 'fill-current hidden')}
           </button>
-          <a href="#trending/us" class="flex items-center gap-2 xl:hidden"><span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">${sv(IC.Charts, 'fill-current', 18, 18)}</span><span class="text-lg font-bold text-gray-800 dark:text-white/90">DASTMON</span></a>
-          <button id="appmenu" aria-label="Menu aplikasi" class="z-99999 flex h-9 w-9 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 xl:hidden dark:text-gray-400 dark:hover:bg-gray-800">${sv(IC.h3, 'fill-current')}</button>
-          <div class="hidden xl:block">
-            <div class="relative">
-              <span class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2">${sv(IC.h4, 'fill-gray-500 dark:fill-gray-400', 20, 20, '0 0 20 20')}</span>
-              <input id="gq" type="text" placeholder="Cari data di tabel..." class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-9 w-full rounded-lg border border-gray-200 bg-transparent py-1.5 pr-14 pl-11 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden xl:w-107.5 dark:border-gray-800 dark:bg-white/3 dark:text-white/90 dark:placeholder:text-white/30">
-              <span class="absolute top-1/2 right-2.5 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-1.75 py-[4.5px] text-xs tracking-[-0.2px] text-gray-500 dark:border-gray-800 dark:bg-white/3 dark:text-gray-400"><span>⌘</span><span>K</span></span>
-            </div>
-          </div>
+          <a href="#trending/us" class="flex min-w-0 items-center gap-2 xl:hidden"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-white">${sv(IC.Charts, 'fill-current', 18, 18)}</span><span class="truncate text-lg font-bold text-gray-800 dark:text-white/90">DASTMON</span></a>
         </div>
-        <div id="hr" class="hidden shadow-theme-md w-full items-center justify-between gap-4 px-5 py-2 xl:flex xl:justify-end xl:px-0 xl:shadow-none">
-          <p class="text-theme-sm text-gray-500 dark:text-gray-400">Update: <span id="updated">-</span></p>
-          <div class="2xsm:gap-3 flex items-center gap-2">
-            <button id="theme" aria-label="Ganti tema" class="relative flex h-9 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">${sv(IC.h5, 'hidden dark:block', 20, 20, '0 0 20 20')}${sv(IC.h6, 'dark:hidden', 20, 20, '0 0 20 20')}</button>
-            <button id="run" hidden class="${BTN_O} h-9 whitespace-nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Jalankan scraper</button>
-            <button id="sync" class="${BTN} h-9"><svg id="sicon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg>Sync</button>
-          </div>
+        <div class="flex shrink-0 items-center gap-2">
+          <p class="text-theme-xs mr-1 hidden text-gray-500 md:block dark:text-gray-400">Update: <span class="upd">-</span></p>
+          <button id="theme" aria-label="Ganti tema" class="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 xl:h-9 xl:w-9 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">${sv(IC.h5, 'hidden dark:block', 20, 20, '0 0 20 20')}${sv(IC.h6, 'dark:hidden', 20, 20, '0 0 20 20')}</button>
+          <button id="run" hidden aria-label="Jalankan scraper" title="Jalankan scraper" class="${BTN_O} h-10 whitespace-nowrap xl:h-9"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span class="hidden sm:inline">Jalankan scraper</span></button>
+          <button id="sync" aria-label="Sinkronkan data" title="Sync" class="${BTN} h-10 xl:h-9"><svg id="sicon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg><span class="hidden sm:inline">Sync</span></button>
         </div>
       </div>
       <div id="bar" hidden class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden"><div class="absolute h-full w-2/5 bg-brand-500" style="animation:dm-bar 1.1s ease-in-out infinite"></div></div>
@@ -148,7 +144,7 @@ function setSide(v) {
   s.classList.toggle('-translate-x-full', !v);
   s.classList.toggle('translate-x-0', v);
   s.classList.toggle('sb-min', v);
-  $('ov').className = 'fixed w-full h-screen z-9 bg-gray-900/50 ' + (v ? 'block lg:hidden' : 'hidden');
+  $('ov').className = 'fixed w-full h-dvh z-999998 bg-gray-900/50 ' + (v ? 'block xl:hidden' : 'hidden');
   const b = $('burger'), [, m, x] = b.children;
   b.classList.toggle('bg-gray-100', v); b.classList.toggle('dark:bg-gray-800', v);
   m.setAttribute('class', 'fill-current xl:hidden ' + (v ? 'hidden' : 'block'));
@@ -156,9 +152,8 @@ function setSide(v) {
 }
 $('burger').onclick = e => { e.stopPropagation(); setSide(!sidebarToggle); };
 $('ov').onclick = () => setSide(false);
+$('sclose').onclick = () => setSide(false);
 document.addEventListener('click', e => { if (innerWidth < 1280 && sidebarToggle && !$('side').contains(e.target)) setSide(false); });
-$('appmenu').onclick = () => { menuToggle = !menuToggle; $('hr').classList.toggle('flex', menuToggle); $('hr').classList.toggle('hidden', !menuToggle); };
-document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('gq').focus(); } });
 
 // ---------- Tema ----------
 function applyDark() {
@@ -179,7 +174,7 @@ function go() {
   if (innerWidth < 1280) setSide(false);
   Object.values(charts).forEach(c => c.destroy());
   for (const k in charts) delete charts[k];
-  pg = 0;
+  pg = 0; fCat = ''; fRisk = '';
   const d = DATA[route];
   if (d) shell(d); else soon();
   $('run').hidden = !d;
@@ -187,7 +182,7 @@ function go() {
 }
 
 const crumb = () => `<div class="flex flex-wrap items-center justify-between gap-3 pb-3">
-  <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">${esc(pageName(route))}</h2>
+  <div><h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">${esc(pageName(route))}</h2><p class="text-theme-xs mt-0.5 text-gray-500 md:hidden dark:text-gray-400">Update: <span class="upd">${esc(data?.updatedAt || '-')}</span></p></div>
   <nav><ol class="flex items-center gap-1.5">
     <li><a class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400" href="#trending/us">Home
       <svg class="stroke-current" width="17" height="16" viewBox="0 0 17 16" fill="none"><path d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366" stroke="" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
@@ -204,24 +199,17 @@ function shell(d) {
   $('view').innerHTML = crumb() + `
   <div class="grid grid-cols-12 gap-3">
     <div id="stats" class="col-span-12 grid grid-cols-2 gap-3 xl:grid-cols-4"></div>
-    <div class="col-span-12 xl:col-span-8 ${CARD} p-4">
+    <div class="col-span-12 min-w-0 xl:col-span-8 ${CARD} p-4">
       <h3 class="${H3}">Distribusi Kategori</h3><p class="${SUB} mb-2">Jumlah data per kategori hasil analisis AI</p><div id="c1"></div></div>
-    <div class="col-span-12 xl:col-span-4 ${CARD} p-4">
+    <div class="col-span-12 min-w-0 xl:col-span-4 ${CARD} p-4">
       <h3 class="${H3}">Risiko Copyright</h3><p class="${SUB} mb-2">Perkiraan AI, bukan nasihat hukum</p><div id="c2"></div></div>
     <div class="col-span-12 overflow-hidden ${CARD} px-4 pt-3 pb-2">
-      <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div><h3 class="${H3}">Data</h3><p id="count" class="${SUB}"></p></div>
-        <div class="flex items-center gap-2">
-          <div class="relative z-20 bg-transparent"><select id="rf" class="${SELECT} sm:w-40">
-            <option value="" class="${OPT}">Semua risiko</option><option class="${OPT}">High</option><option class="${OPT}">Medium</option><option class="${OPT}">Low</option><option class="${OPT}">Unknown</option></select>
-            <span class="pointer-events-none absolute top-1/2 right-3 z-30 -translate-y-1/2 stroke-current text-gray-500 dark:text-gray-400"><svg width="16" height="16" viewBox="0 0 20 20" fill="none">${CHEV}</svg></span></div>
-        </div>
-      </div>
+      <div class="mb-3"><h3 class="${H3}">Data</h3><p id="count" class="${SUB}"></p></div>
+      <div id="filters" class="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:max-w-3xl"></div>
       <div class="custom-scrollbar max-w-full overflow-x-auto"><table class="min-w-full"><thead id="thead" class="border-y border-gray-100 dark:border-gray-800"></thead><tbody id="tbody" class="divide-y divide-gray-100 dark:divide-gray-800"></tbody></table></div>
       <div id="pager" class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 py-2 dark:border-gray-800"></div>
     </div>
   </div>`;
-  $('rf').onchange = () => { pg = 0; update(); };
 }
 
 // ---------- Chart (konfigurasi ApexCharts dari chart-01.js / chart-02.js template) ----------
@@ -257,18 +245,19 @@ function update() {
   const all = data?.[d.key] || [];
   const risks = count(all, r => nk(d.risk(r)));
   const cats = Object.entries(count(all.filter(r => d.cat(r) && d.cat(r) !== '-'), d.cat)).sort((a, b) => b[1] - a[1]);
-  const pct = n => (all.length ? Math.round(n / all.length * 100) : 0) + '%';
-  const pill = (t, c) => `<span class="${c} flex items-center gap-1 rounded-full px-2 py-0.5 text-theme-xs font-medium">${t}</span>`;
+  const pctOf = n => (all.length ? Math.round(n / all.length * 100) : 0) + '%';
+  const ERR = 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500', OK = 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500';
 
   $('stats').innerHTML = [
-    ['Total Data', all.length, SI.total, ''],
-    ['Kategori', cats.length, SI.cat, ''],
-    ['High Risk', risks.High || 0, SI.high, pill(pct(risks.High || 0), 'bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500')],
-    ['Low Risk', risks.Low || 0, SI.low, pill(pct(risks.Low || 0), 'bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500')]
-  ].map(([l, v, ic, b]) => `<div class="flex items-center gap-3 ${CARD} p-3">
-    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">${sIcon(ic)}</div>
-    <div class="min-w-0 flex-1"><span class="text-theme-xs text-gray-500 dark:text-gray-400">${l}</span>
-    <h4 class="text-xl leading-6 font-bold text-gray-800 dark:text-white/90">${esc(v)}</h4></div>${b}</div>`).join('');
+    ['Total Data', all.length, SI.total, null],
+    ['Kategori', cats.length, SI.cat, null],
+    ['High Risk', risks.High || 0, SI.high, [ERR, pctOf(risks.High || 0)]],
+    ['Low Risk', risks.Low || 0, SI.low, [OK, pctOf(risks.Low || 0)]]
+  ].map(([l, v, ic, b]) => `<div class="flex min-w-0 items-center gap-3 ${CARD} p-3">
+    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 sm:h-10 sm:w-10 dark:bg-gray-800">${sIcon(ic)}</div>
+    <div class="min-w-0 flex-1"><span class="text-theme-xs block truncate text-gray-500 dark:text-gray-400">${l}</span>
+    <div class="flex items-center gap-1.5"><h4 class="text-lg leading-6 font-bold text-gray-800 sm:text-xl dark:text-white/90">${esc(v)}</h4>${b ? `<span class="${b[0]} text-theme-xs rounded-full px-1.5 py-0.5 font-medium sm:hidden">${b[1]}</span>` : ''}</div></div>
+    ${b ? `<span class="${b[0]} text-theme-xs hidden shrink-0 rounded-full px-2 py-0.5 font-medium sm:inline-block">${b[1]}</span>` : ''}</div>`).join('');
 
   if (cats.length) {
     draw('c1', {
@@ -278,6 +267,7 @@ function update() {
       plotOptions: { bar: { horizontal: true, barHeight: '55%', borderRadius: 5, borderRadiusApplication: 'end' } },
       dataLabels: { enabled: false },
       xaxis: { categories: cats.map(c => c[0]), axisBorder: { show: false }, axisTicks: { show: false } },
+      yaxis: { labels: { maxWidth: 130 } },
       legend: { show: false },
       tooltip: { x: { show: true } }
     });
@@ -294,20 +284,32 @@ function update() {
     });
   } else { charts.c2?.destroy(); delete charts.c2; $('c2').innerHTML = `<p class="text-theme-sm text-gray-500 dark:text-gray-400">Belum ada data.</p>`; }
 
-  const q = $('gq').value.toLowerCase(), f = $('rf').value;
-  const rows = all.filter(r => (!f || nk(d.risk(r)) === f) && (!q || Object.values(r).join(' ').toLowerCase().includes(q)));
+  // Filter Category & Copyright (di atas tabel)
+  const catKey = r => { const c = d.cat(r); return c && c !== '-' ? c : ''; };
+  const catCount = count(all, catKey);
+  if (fCat && fCat !== '__none__' && !catCount[fCat]) fCat = ''; // kategori hilang setelah refresh data
+  const opt = (v, t, on) => `<option value="${esc(v)}" class="${OPT}" ${on ? 'selected' : ''}>${esc(t)}</option>`;
+  const fsel = (id, label, html) => `<div class="relative"><select id="${id}" aria-label="${label}" class="${FSEL}">${html}</select><span class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 stroke-current text-gray-500 dark:text-gray-400"><svg width="16" height="16" viewBox="0 0 20 20" fill="none">${CHEV}</svg></span></div>`;
+  const catHtml = opt('', 'Semua kategori', !fCat)
+    + Object.keys(catCount).filter(Boolean).sort((a, b) => a.localeCompare(b)).map(c => opt(c, `${c} (${catCount[c]})`, fCat === c)).join('')
+    + (catCount[''] ? opt('__none__', `Belum dianalisis (${catCount['']})`, fCat === '__none__') : '');
+  const riskHtml = opt('', 'Semua copyright', !fRisk) + Object.keys(RISK).map(k => opt(k, `${RISK[k][0]} (${risks[k] || 0})`, fRisk === k)).join('');
+  $('filters').innerHTML = fsel('fc', 'Filter kategori', catHtml) + fsel('fr', 'Filter copyright', riskHtml)
+    + `<button data-reset class="${BTN_O} h-11 sm:h-9" ${fCat || fRisk ? '' : 'disabled'}>Reset</button>`;
+
+  const rows = all.filter(r => (!fRisk || nk(d.risk(r)) === fRisk) && (!fCat || (fCat === '__none__' ? catKey(r) === '' : catKey(r) === fCat)));
   const pages = Math.max(1, Math.ceil(rows.length / perPage));
   pg = Math.min(pg, pages - 1);
   const from = pg * perPage, part = rows.slice(from, from + perPage);
   const nw = c => (c[2] || '').includes('min-w') ? '' : 'whitespace-nowrap';
 
   $('count').textContent = `${rows.length} dari ${all.length} data`;
-  $('thead').innerHTML = `<tr>${d.cols.map(c => `<th class="px-3 py-2 ${nw(c)} first:pl-0 text-left"><div class="flex items-center"><p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">${c[0]}</p></div></th>`).join('')}</tr>`;
+  $('thead').innerHTML = `<tr>${d.cols.map(c => `<th class="px-3 py-2 ${nw(c)} ${c[3] || ''} first:pl-0 text-left"><div class="flex items-center"><p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">${c[0]}</p></div></th>`).join('')}</tr>`;
   $('tbody').innerHTML = part.length
-    ? part.map((r, i) => `<tr>${d.cols.map(c => `<td class="px-3 py-1.5 ${nw(c)} ${c[2] || ''} first:pl-0"><div class="flex items-center">${c[1](r, from + i + 1)}</div></td>`).join('')}</tr>`).join('')
+    ? part.map((r, i) => `<tr>${d.cols.map(c => `<td class="px-3 py-1.5 ${nw(c)} ${c[2] || ''} ${c[3] || ''} first:pl-0"><div class="flex flex-col items-start justify-center">${c[1](r, from + i + 1)}</div></td>`).join('')}</tr>`).join('')
     : `<tr><td colspan="${d.cols.length}" class="py-6 text-center text-theme-xs text-gray-500 dark:text-gray-400">Tidak ada data.</td></tr>`;
   $('pager').innerHTML = `<div class="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400"><span>Tampilkan</span>
-    <div class="relative"><select id="pp" aria-label="Jumlah data per halaman" class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 text-theme-xs h-8 appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-1 pr-7 pl-3 text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">${[10, 20, 30, 40, 50].map(n => `<option value="${n}" class="${OPT}" ${n === perPage ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <div class="relative"><select id="pp" aria-label="Jumlah data per halaman" class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 h-8 text-base sm:text-theme-xs appearance-none rounded-lg border border-gray-300 bg-transparent bg-none py-1 pr-7 pl-3 text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">${[10, 20, 30, 40, 50].map(n => `<option value="${n}" class="${OPT}" ${n === perPage ? 'selected' : ''}>${n}</option>`).join('')}</select>
     <span class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 stroke-current text-gray-500 dark:text-gray-400"><svg width="14" height="14" viewBox="0 0 20 20" fill="none">${CHEV}</svg></span></div><span>data</span></div>
     <div class="flex items-center gap-2"><span class="text-theme-xs text-gray-500 dark:text-gray-400">${rows.length ? `${from + 1}–${from + part.length} dari ${rows.length}` : '0 data'}</span>
     ${PBTN(-1, '<path d="M12.5 5l-5 5 5 5"/>', 'Sebelumnya', pg === 0)}${PBTN(1, '<path d="M7.5 5l5 5-5 5"/>', 'Berikutnya', pg >= pages - 1)}</div>`;
@@ -315,10 +317,17 @@ function update() {
 
 $('view').addEventListener('click', e => {
   const b = e.target.closest('[data-pg]');
-  if (b) { pg += Number(b.dataset.pg); update(); }
+  if (b) { pg += Number(b.dataset.pg); update(); return; }
+  if (e.target.closest('[data-reset]')) { fCat = ''; fRisk = ''; pg = 0; update(); }
 });
-$('view').addEventListener('change', e => { if (e.target.id === 'pp') { perPage = Number(e.target.value); pg = 0; update(); } });
-$('gq').oninput = () => { pg = 0; update(); };
+$('view').addEventListener('change', e => {
+  const id = e.target.id;
+  if (id === 'pp') perPage = Number(e.target.value);
+  else if (id === 'fc') fCat = e.target.value;
+  else if (id === 'fr') fRisk = e.target.value;
+  else return;
+  pg = 0; update();
+});
 
 // ---------- Skeleton (animasi loading) ----------
 const sk = (c, st = '') => `<div class="animate-pulse rounded-md bg-gray-200 dark:bg-gray-800 ${c}" style="${st}"></div>`;
@@ -327,8 +336,9 @@ function skeleton(d) {
   $('c1').innerHTML = `<div class="space-y-3 py-1">${[92, 74, 58, 44, 30].map(w => sk('h-4', `width:${w}%`)).join('')}</div>`;
   $('c2').innerHTML = `<div class="flex justify-center py-2">${sk('h-44 w-44 !rounded-full')}</div>`;
   $('count').textContent = 'Memuat data…';
-  $('thead').innerHTML = `<tr>${d.cols.map(c => `<th class="px-3 py-2 text-left first:pl-0"><p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">${c[0]}</p></th>`).join('')}</tr>`;
-  $('tbody').innerHTML = Array.from({ length: 8 }, () => `<tr>${d.cols.map(() => `<td class="px-3 py-2.5 first:pl-0">${sk('h-3 w-full max-w-40')}</td>`).join('')}</tr>`).join('');
+  $('filters').innerHTML = sk('h-11 sm:h-9') + sk('h-11 sm:h-9');
+  $('thead').innerHTML = `<tr>${d.cols.map(c => `<th class="px-3 py-2 text-left first:pl-0 ${c[3] || ''}"><p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">${c[0]}</p></th>`).join('')}</tr>`;
+  $('tbody').innerHTML = Array.from({ length: 8 }, () => `<tr>${d.cols.map(c => `<td class="px-3 py-2.5 first:pl-0 ${c[3] || ''}">${sk('h-3 w-full max-w-40')}</td>`).join('')}</tr>`).join('');
   $('pager').innerHTML = '';
 }
 
@@ -393,7 +403,7 @@ async function load(silent) {
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
     data = json;
-    $('updated').textContent = json.updatedAt;
+    document.querySelectorAll('.upd').forEach(el => { el.textContent = json.updatedAt; });
   } catch (e) {
     // refresh otomatis (silent) tidak memunculkan modal; Sync manual & muat awal tetap memunculkan
     if (!silent && $('modal').classList.contains('hidden')) modal({ type: 'error', title: 'Gagal memuat data', text: e.message });
