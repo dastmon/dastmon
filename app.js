@@ -349,7 +349,7 @@ function modal({ type = 'info', title = '', text = '', body = '', actions, dismi
   m.innerHTML = `<div role="dialog" aria-modal="true" class="w-full max-w-115 rounded-3xl bg-white p-6 text-center dark:bg-gray-900">
     <div class="mb-4 flex justify-center">${ic}</div>
     <h4 class="mb-2 text-xl font-semibold text-gray-800 dark:text-white/90">${esc(title)}</h4>
-    <p class="text-sm leading-6 text-gray-500 dark:text-gray-400">${esc(text)}</p>${body}
+    <p id="mt" class="text-sm leading-6 text-gray-500 dark:text-gray-400">${esc(text)}</p>${body}
     ${btns ? `<div class="mt-6 flex items-center justify-center gap-3">${btns}</div>` : ''}</div>`;
   m.classList.remove('hidden'); m.classList.add('flex');
   setTimeout(() => ($('mi') || m.querySelector('[data-m]:last-child'))?.focus(), 30);
@@ -367,10 +367,10 @@ document.addEventListener('keydown', e => {
 });
 
 const TOKEN_INPUT = '<input id="mi" type="password" autocomplete="off" placeholder="ADMIN_TOKEN" class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 mt-4 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">';
-function askRun(name, saved) {
+function askRun(name, saved, note) {
   return new Promise(res => modal({
     type: 'info', title: 'Jalankan scraper?', dismiss: false,
-    text: `Scraper "${name}" akan dijalankan dan data diperbarui. Proses bisa memakan waktu beberapa menit.${saved ? '' : ' Masukkan ADMIN_TOKEN untuk melanjutkan.'}`,
+    text: `${note || `Scraper "${name}" akan dijalankan dan data diperbarui. Proses bisa memakan waktu beberapa menit.`}${saved ? '' : ' Masukkan ADMIN_TOKEN untuk melanjutkan.'}`,
     body: saved ? '' : TOKEN_INPUT,
     actions: [
       ['Batal', 'outline', () => { closeModal(); res(null); }],
@@ -401,19 +401,51 @@ async function load(silent) {
   loading = false; setBusy(false); update();
 }
 
+// POST tanpa header Content-Type => text/plain => tidak ada preflight CORS
+const api = async body => (await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) })).json();
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const setModalText = t => { const p = $('mt'); if (p) p.textContent = t; };
+const ghLink = u => /^https:\/\/github\.com\//.test(u || '') ? `<a href="${esc(u)}" target="_blank" rel="noopener" class="text-theme-sm mt-3 inline-block font-medium text-brand-500 hover:underline">Buka log di GitHub</a>` : '';
+
+// Menunggu workflow GitHub Actions (dipicu backend) sampai selesai; null = melewati batas 10 menit
+async function waitWorkflow(token, dispatchedAt) {
+  const since = new Date(dispatchedAt).getTime() - 15000, t0 = Date.now();
+  while (Date.now() - t0 < 10 * 60 * 1000) {
+    await wait(8000);
+    let st;
+    try { st = await api({ action: 'ghstatus', token }); } catch (e) { continue; } // gangguan jaringan sesaat
+    if (!st.ok) throw new Error(st.error);
+    const secs = Math.round((Date.now() - t0) / 1000), run = st.run;
+    if (run && new Date(run.created_at).getTime() >= since) {
+      if (run.status === 'completed') return run;
+      setModalText(`Workflow GitHub ${run.status === 'in_progress' ? 'sedang berjalan' : 'menunggu giliran'}… (${secs} dtk)`);
+    } else setModalText(`Menunggu GitHub memulai workflow… (${secs} dtk)`);
+  }
+  return null;
+}
+
 async function runJob(job) {
-  const token = await askRun(pageName(route), sessionStorage.getItem('dastmon_token'));
+  const viaGithub = job === 'teepublic';
+  const note = viaGithub ? 'Workflow GitHub Actions akan dipicu untuk mengambil tag terbaru dari TeePublic, lalu backend menganalisisnya dengan AI. Biasanya 1–5 menit.' : '';
+  const token = await askRun(pageName(route), sessionStorage.getItem('dastmon_token'), note);
   if (!token) return;
   $('run').disabled = true;
-  modal({ type: 'loading', title: 'Scraper sedang berjalan', text: 'Mohon tunggu, proses bisa memakan waktu beberapa menit. Jangan menutup halaman ini.', actions: [], dismiss: false });
+  modal({ type: 'loading', title: 'Scraper sedang berjalan', text: viaGithub ? 'Memicu workflow GitHub Actions…' : 'Mohon tunggu, proses bisa memakan waktu beberapa menit. Jangan menutup halaman ini.', actions: [], dismiss: false });
   try {
-    // Tanpa header Content-Type => text/plain => tidak ada preflight CORS
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'run', job, token }) });
-    const json = await res.json();
+    const json = await api({ action: 'run', job, token });
     if (!json.ok) { sessionStorage.removeItem('dastmon_token'); throw new Error(json.error); }
     sessionStorage.setItem('dastmon_token', token);
-    await load(true);
-    modal({ type: 'success', title: 'Scraper selesai', text: `${json.count} data berhasil diperbarui.` });
+    if (json.async) {
+      const run = await waitWorkflow(token, json.dispatchedAt);
+      await load(true);
+      if (!run) modal({ type: 'info', title: 'Workflow masih berjalan', text: 'GitHub belum selesai setelah 10 menit. Klik Sync beberapa saat lagi untuk memuat data terbaru.' });
+      else if (run.conclusion === 'success') modal({ type: 'success', title: 'Tag TeePublic diperbarui', text: 'Workflow GitHub Actions selesai dan data sudah dimuat ulang.' });
+      else modal({ type: 'error', title: 'Workflow GitHub gagal', text: `Hasil: ${run.conclusion || run.status}. Periksa log workflow di GitHub.`, body: ghLink(run.html_url) });
+    } else {
+      await load(true);
+      const ok = Number(json.count) > 0;
+      modal({ type: ok ? 'success' : 'info', title: ok ? 'Scraper selesai' : 'Tidak ada pembaruan', text: json.message || `${json.count} data berhasil diperbarui.` });
+    }
   } catch (e) { modal({ type: 'error', title: 'Scraper gagal', text: e.message }); }
   $('run').disabled = false;
 }
